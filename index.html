@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NN/G Video Topic Tool</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #fff; color: #1a1a1a; padding: 2rem; max-width: 700px; margin: 0 auto; }
+.nng-header { display: flex; align-items: center; gap: 10px; margin-bottom: 1.5rem; }
+.nng-logo { font-size: 15px; font-weight: 500; }
+.nng-logo span { color: #C0392B; }
+.nng-tag { font-size: 11px; color: #666; background: #f5f5f3; border: 0.5px solid #e0e0e0; border-radius: 6px; padding: 2px 8px; }
+.tab-bar { display: flex; gap: 0; margin-bottom: 1.5rem; border-bottom: 0.5px solid #e0e0e0; }
+.tab { font-size: 13px; font-weight: 500; padding: 8px 16px; cursor: pointer; color: #666; border-bottom: 2px solid transparent; margin-bottom: -0.5px; background: transparent; border-top: none; border-left: none; border-right: none; font-family: inherit; }
+.tab.active { color: #1a1a1a; border-bottom: 2px solid #1a1a1a; }
+.panel { display: none; }
+.panel.active { display: block; }
+label.field-label { font-size: 13px; font-weight: 500; color: #1a1a1a; margin-bottom: 6px; display: block; }
+span.field-hint { font-size: 12px; color: #666; margin-bottom: 8px; display: block; }
+textarea { width: 100%; min-height: 80px; resize: vertical; font-size: 14px; font-family: inherit; border: 0.5px solid #ccc; border-radius: 8px; padding: 8px 10px; color: #1a1a1a; background: #fff; }
+textarea:focus { outline: none; border-color: #888; }
+select { width: 100%; font-size: 14px; font-family: inherit; border: 0.5px solid #ccc; border-radius: 8px; padding: 8px 10px; color: #1a1a1a; background: #fff; height: 36px; }
+select:focus { outline: none; border-color: #888; }
+.field { margin-bottom: 1.25rem; }
+.row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem; }
+button.btn-primary { width: 100%; font-size: 14px; font-weight: 500; padding: 10px; cursor: pointer; font-family: inherit; background: #fff; border: 0.5px solid #ccc; border-radius: 8px; color: #1a1a1a; }
+button.btn-primary:hover { background: #f5f5f3; }
+button.btn-secondary { width: 100%; font-size: 13px; padding: 8px; cursor: pointer; font-family: inherit; background: #fff; border: 0.5px solid #ccc; border-radius: 8px; color: #1a1a1a; margin-top: 0.75rem; }
+button.btn-secondary:hover { background: #f5f5f3; }
+button.idea-use-btn { width: auto; font-size: 12px; padding: 5px 12px; cursor: pointer; font-family: inherit; background: #fff; border: 0.5px solid #ccc; border-radius: 6px; color: #1a1a1a; }
+button.idea-use-btn:hover { background: #f5f5f3; }
+.result-card { background: #fff; border: 0.5px solid #ccc; border-radius: 12px; padding: 1.25rem; margin-top: 1.5rem; }
+.verdict { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; padding: 4px 10px; border-radius: 6px; margin-bottom: 1rem; }
+.verdict.strong { background: #EAF3DE; color: #27500A; }
+.verdict.refine { background: #FAEEDA; color: #633806; }
+.verdict.notfit { background: #FCEBEB; color: #791F1F; }
+.result-section { margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 0.5px solid #e8e8e8; }
+.result-section:last-of-type { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+.result-label { font-size: 11px; font-weight: 500; color: #999; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+.result-value { font-size: 14px; color: #1a1a1a; line-height: 1.6; }
+.pill { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 20px; margin: 2px 2px 2px 0; }
+.pill-purple { background: #EEEDFE; color: #3C3489; }
+.pill-teal { background: #E1F5EE; color: #085041; }
+.rewritten { background: #f5f5f3; border-radius: 6px; padding: 10px 12px; font-size: 14px; color: #1a1a1a; line-height: 1.6; font-style: italic; margin-top: 4px; }
+.format-note { background: #EEEDFE; border-radius: 6px; padding: 10px 12px; font-size: 13px; color: #3C3489; line-height: 1.6; margin-top: 4px; }
+.loading-state { text-align: center; padding: 2rem 0; color: #666; font-size: 14px; }
+.loading-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #999; margin: 0 2px; animation: bounce 1.2s infinite; }
+.loading-dot:nth-child(2) { animation-delay: 0.2s; }
+.loading-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes bounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-6px)} }
+.divider { border: none; border-top: 0.5px solid #e8e8e8; margin: 1.25rem 0; }
+.err { color: #A32D2D; font-size: 13px; margin-top: 0.75rem; }
+.idea-card { background: #fff; border: 0.5px solid #e0e0e0; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 0.75rem; }
+.idea-card textarea { min-height: 60px; margin: 8px 0; font-size: 13px; }
+.idea-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+</style>
+</head>
+<body>
+
+<div class="nng-header">
+  <div class="nng-logo">NN<span>/</span>Group</div>
+  <div class="nng-tag">Video topic tool</div>
+</div>
+
+<div class="tab-bar">
+  <button class="tab active" onclick="switchTab('evaluate')">Evaluate an idea</button>
+  <button class="tab" onclick="switchTab('generate')">Generate ideas</button>
+</div>
+
+<div id="panel-evaluate" class="panel active">
+  <div class="field">
+    <label class="field-label" for="topic">What's your video idea?</label>
+    <span class="field-hint">Describe your topic in 1–3 sentences. The more specific, the better the feedback.</span>
+    <textarea id="topic" placeholder="e.g. A teaser video reframing UX as a profit center rather than a cost center — giving practitioners a new language to make the business case internally."></textarea>
+  </div>
+  <div class="row3">
+    <div class="field" style="margin-bottom:0">
+      <label class="field-label" for="format">Format</label>
+      <select id="format">
+        <option value="">Not sure yet</option>
+        <option value="short-form">Short-form (30–90 sec)</option>
+        <option value="long-form">Long-form (3–7 min)</option>
+        <option value="teaser">Teaser (under 60 sec)</option>
+        <option value="both">Both — batch filming</option>
+      </select>
+    </div>
+    <div class="field" style="margin-bottom:0">
+      <label class="field-label" for="intent">Intent</label>
+      <select id="intent">
+        <option value="">Not sure</option>
+        <option value="standalone">Standalone video</option>
+        <option value="teaser-series">Teaser for a series</option>
+        <option value="teaser-longer">Teaser for a longer video</option>
+        <option value="repurposed">Repurposed from existing content</option>
+      </select>
+    </div>
+    <div class="field" style="margin-bottom:0">
+      <label class="field-label" for="role">Your role</label>
+      <select id="role">
+        <option value="">Prefer not to say</option>
+        <option value="UX researcher">UX researcher</option>
+        <option value="UX designer">UX designer</option>
+        <option value="UX writer">UX writer</option>
+        <option value="Product manager">Product manager</option>
+        <option value="UX manager or leader">UX manager or leader</option>
+        <option value="NN/G consultant">NN/G consultant</option>
+        <option value="NN/G trainer">NN/G trainer</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+  </div>
+  <button class="btn-primary" id="evaluate-btn">Evaluate my idea</button>
+  <div id="eval-error" class="err" style="display:none"></div>
+  <div id="eval-result" style="display:none"></div>
+</div>
+
+<div id="panel-generate" class="panel">
+  <div class="row2">
+    <div class="field">
+      <label class="field-label" for="gen-role">Your role / expertise</label>
+      <select id="gen-role">
+        <option value="">Select your role</option>
+        <option value="UX researcher">UX researcher</option>
+        <option value="UX designer">UX designer</option>
+        <option value="UX writer">UX writer</option>
+        <option value="Product manager">Product manager</option>
+        <option value="UX manager or leader">UX manager or leader</option>
+        <option value="NN/G consultant">NN/G consultant</option>
+        <option value="NN/G trainer">NN/G trainer</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+    <div class="field">
+      <label class="field-label" for="gen-format">Preferred format</label>
+      <select id="gen-format">
+        <option value="">No preference</option>
+        <option value="short-form">Short-form (30–90 sec)</option>
+        <option value="long-form">Long-form (3–7 min)</option>
+        <option value="both">Open to both</option>
+      </select>
+    </div>
+  </div>
+  <div class="field">
+    <label class="field-label" for="gen-seed">What area do you want to make a video about?</label>
+    <span class="field-hint">A topic, theme, experience, or question you keep coming back to. Doesn't need to be polished.</span>
+    <textarea id="gen-seed" placeholder="e.g. I keep seeing teams skip synthesis after research sessions and go straight to design. I want to talk about why that's a problem and what good synthesis looks like."></textarea>
+  </div>
+  <button class="btn-primary" id="generate-btn">Generate ideas</button>
+  <div id="gen-error" class="err" style="display:none"></div>
+  <div id="gen-result" style="display:none"></div>
+</div>
+
+<script>
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+  document.querySelectorAll('.tab')[tab === 'evaluate' ? 0 : 1].classList.add('active');
+}
+
+const EVAL_SYSTEM = `You are a video content editor and strategist for Nielsen Norman Group (NN/G), the world's leading UX research and training firm. Your job is to evaluate video topic ideas submitted by NN/G contributors and give them clear, direct, professional feedback.
+
+NN/G's brand voice: authoritative but approachable. Expert without being elitist. Evidence-based, not opinionated. Human and real — not corporate or stiff.
+
+NN/G's audience: UX practitioners (researchers, designers, writers, managers), people learning UX, product teams. They're smart, time-poor, and have high standards for quality and accuracy.
+
+NN/G's six content pillars:
+1. Advice & FAQs — conversational, personal perspective, common questions. Low prep. Good for short-form.
+2. Show & Tell — walking through a real product, app, or case study. Low-medium prep. Works for both formats.
+3. Educational — structured explanation of a UX concept or framework. High prep. Best for long-form.
+4. Conversational — career journey, behind-the-scenes, personal takes on trends. Low prep. Good for LinkedIn and short-form.
+5. Tutorials & Demos — screen-share walkthroughs of tools or skills. Medium-high prep. Best for long-form.
+6. Funny / Relatable — POV-style, UX culture humor, meme-style content. Low prep. Short-form only.
+
+Platforms: YouTube (long-form 3-7min, search-driven), YouTube Shorts (30-90sec, algo-fed), Instagram Reels (60-90sec, visual mobile-first), LinkedIn (30sec-2min, professional thought leadership), TikTok (30-60sec, casual authentic).
+
+Format guidance:
+TEASER: end with explicit hook to longer piece, hook in first 3 seconds, one idea only, keep curiosity gap open.
+SHORT-FORM standalone: one idea, one payoff, one CTA, hook is first sentence.
+LONG-FORM: needs structure hook to 2-4 points to conclusion to CTA, demonstrate real depth.
+TEASER FOR SERIES: establish series premise in one sentence, end with subscribe/follow CTA.
+REPURPOSED: reference source content, recommend clipping a specific moment.
+
+Strong idea: specific, useful, authentic, appropriately scoped, research or experience-backed.
+Weak idea: too broad, too generic, pure opinion without backing, not UX-focused, already well-covered by NN/G.
+
+Respond ONLY with valid JSON, no preamble or markdown:
+{"verdict":"strong or refine or not a fit","verdict_reason":"one sentence","pillar":"pillar name","pillar_reason":"one sentence","platforms":["platform1"],"platforms_reason":"one sentence","hook_angle":"specific concrete hook or opening line","rewritten":"sharpened 1-2 sentence version","format_note":"format-specific advice or empty string"}`;
+
+const GEN_SYSTEM = `You are a creative video content strategist for Nielsen Norman Group (NN/G), the world's leading UX research and training firm. Generate fresh, original video topic ideas for NN/G contributors.
+
+NN/G's brand voice: authoritative but approachable. Expert without being elitist. Evidence-based, not opinionated. Human and real.
+NN/G's audience: UX practitioners, product teams, people learning UX. Smart, time-poor, high standards.
+
+CRITICAL — What to avoid:
+- Do NOT suggest generic UX topics any blog could cover
+- Do NOT regurgitate standard NN/G curriculum or textbook definitions
+- Do NOT suggest obvious ideas to experienced practitioners
+- Do NOT repeat the contributor's seed topic verbatim — find new angles from it
+
+What makes a great idea:
+- Draws on specific real experience or observation
+- Challenges a common assumption or reframes something familiar
+- Gives practitioners a mental model or language they can actually use
+- Has a hook — counterintuitive angle, bold take, or unexpected reframe
+- Specific enough to cover well in one video
+
+NN/G's six content pillars:
+1. Advice & FAQs — conversational, personal perspective. Low prep. Good for short-form.
+2. Show & Tell — walking through a real product or case study. Low-medium prep.
+3. Educational — structured concept explanation. High prep. Best for long-form.
+4. Conversational — career journey, personal takes on trends. Low prep.
+5. Tutorials & Demos — screen-share walkthroughs. Medium-high prep. Long-form.
+6. Funny / Relatable — POV-style, UX humor. Low prep. Short-form only.
+
+Generate exactly 3 ideas. Make them genuinely distinct — different pillars, angles, tones. At least one should be unexpected or contrarian. Do not play it safe.
+
+Respond ONLY with valid JSON, no preamble or markdown:
+{"ideas":[{"title":"short punchy title","description":"2-3 sentence description — specific, concrete, clear angle","pillar":"pillar name","format":"short-form or long-form or either","hook":"specific opening line or hook"}]}`;
+
+async function callAPI(system, userMsg) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      system,
+      messages: [{ role: 'user', content: userMsg }]
+    })
+  });
+  const data = await res.json();
+  const raw = data.content?.find(b => b.type === 'text')?.text || '';
+  return JSON.parse(raw.replace(/```json|```/g, '').trim());
+}
+
+document.getElementById('evaluate-btn').addEventListener('click', async () => {
+  const topic = document.getElementById('topic').value.trim();
+  const format = document.getElementById('format').value;
+  const intent = document.getElementById('intent').value;
+  const role = document.getElementById('role').value;
+  const errEl = document.getElementById('eval-error');
+  const resultEl = document.getElementById('eval-result');
+
+  errEl.style.display = 'none';
+  resultEl.style.display = 'none';
+  if (!topic) { errEl.textContent = 'Please describe your video idea.'; errEl.style.display = 'block'; return; }
+
+  let msg = `Video idea: ${topic}`;
+  if (format) msg += `\nFormat: ${format}`;
+  if (intent) msg += `\nIntent: ${intent}`;
+  if (role) msg += `\nRole: ${role}`;
+
+  resultEl.style.display = 'block';
+  resultEl.innerHTML = `<div class="loading-state">Evaluating<span class="loading-dot"></span><span class="loading-dot"></span><span class="loading-dot"></span></div>`;
+
+  try {
+    const r = await callAPI(EVAL_SYSTEM, msg);
+    const vc = r.verdict === 'strong' ? 'strong' : r.verdict === 'refine' ? 'refine' : 'notfit';
+    const vl = r.verdict === 'strong' ? 'Strong idea' : r.verdict === 'refine' ? 'Needs refinement' : 'Not a fit right now';
+    const platforms = (r.platforms || []).map(p => `<span class="pill pill-teal">${p}</span>`).join('');
+    const fNote = r.format_note ? `<div class="result-section"><div class="result-label">Format guidance</div><div class="format-note">${r.format_note}</div></div>` : '';
+    resultEl.innerHTML = `<div class="result-card">
+      <div class="verdict ${vc}">${vl}</div>
+      <div class="result-section"><div class="result-label">Verdict</div><div class="result-value">${r.verdict_reason}</div></div>
+      <div class="result-section"><div class="result-label">Content pillar</div><div class="result-value"><span class="pill pill-purple">${r.pillar}</span></div><div class="result-value" style="margin-top:4px">${r.pillar_reason}</div></div>
+      <div class="result-section"><div class="result-label">Best platforms</div><div class="result-value">${platforms}</div><div class="result-value" style="margin-top:4px">${r.platforms_reason}</div></div>
+      <div class="result-section"><div class="result-label">Hook angle</div><div class="result-value">${r.hook_angle}</div></div>
+      <div class="result-section"><div class="result-label">Sharpened version</div><div class="rewritten">${r.rewritten}</div></div>
+      ${fNote}
+      <hr class="divider">
+      <a href="https://docs.google.com/forms/d/1CZCg4tGjX5QFZK7gIS2edsku1T78BDBFHrRbzi1FiLY/edit" target="_blank"><button class="btn-secondary">Submit this idea to the team</button></a>
+    </div>`;
+  } catch(e) {
+    resultEl.style.display = 'none';
+    errEl.textContent = 'Something went wrong. Please try again.';
+    errEl.style.display = 'block';
+  }
+});
+
+document.getElementById('generate-btn').addEventListener('click', async () => {
+  const seed = document.getElementById('gen-seed').value.trim();
+  const role = document.getElementById('gen-role').value;
+  const format = document.getElementById('gen-format').value;
+  const errEl = document.getElementById('gen-error');
+  const resultEl = document.getElementById('gen-result');
+
+  errEl.style.display = 'none';
+  resultEl.style.display = 'none';
+  if (!seed) { errEl.textContent = 'Please describe an area you want to explore.'; errEl.style.display = 'block'; return; }
+
+  let msg = `Seed topic: ${seed}`;
+  if (role) msg += `\nRole: ${role}`;
+  if (format) msg += `\nPreferred format: ${format}`;
+
+  resultEl.style.display = 'block';
+  resultEl.innerHTML = `<div class="loading-state">Generating ideas<span class="loading-dot"></span><span class="loading-dot"></span><span class="loading-dot"></span></div>`;
+
+  try {
+    const r = await callAPI(GEN_SYSTEM, msg);
+    const cards = (r.ideas || []).map((idea, i) => `
+      <div class="idea-card">
+        <div class="idea-meta"><span class="pill pill-purple">${idea.pillar}</span><span class="pill pill-teal">${idea.format}</span></div>
+        <div class="result-label" style="margin-bottom:4px">${idea.title}</div>
+        <textarea id="idea-text-${i}">${idea.description}</textarea>
+        <div class="result-label" style="margin-bottom:4px;margin-top:8px">Hook</div>
+        <div class="result-value" style="font-size:13px;color:#666;margin-bottom:10px;font-style:italic">${idea.hook}</div>
+        <button class="idea-use-btn" onclick="useIdea(${i})">Use this idea in the evaluator</button>
+      </div>`).join('');
+    resultEl.innerHTML = `<div style="margin-top:1.5rem">${cards}</div>`;
+  } catch(e) {
+    resultEl.style.display = 'none';
+    errEl.textContent = 'Something went wrong. Please try again.';
+    errEl.style.display = 'block';
+  }
+});
+
+function useIdea(i) {
+  const text = document.getElementById('idea-text-' + i).value.trim();
+  document.getElementById('topic').value = text;
+  switchTab('evaluate');
+  window.scrollTo(0, 0);
+}
+</script>
+</body>
+</html>
